@@ -12,7 +12,7 @@ export const SectionHeading = styled.h2`
   text-align: center;
   padding: 20px 0;
   margin-bottom: 20px;
-  border-bottom: solid 2px #5937ff;
+  border-bottom: solid 2px ${({theme}) => theme.colors.blue};
 `;
 
 export const AdditionalText = styled.p`

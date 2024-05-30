@@ -8,7 +8,7 @@ export const Label = styled.label`
 `;
 
 export const StyledInput = styled.input`
-  border: solid 2px #5937ff;
+  border: solid 2px ${({ theme }) => theme.colors.blue};
   border-radius: 6px;
   padding: 7px;
   &:focus {

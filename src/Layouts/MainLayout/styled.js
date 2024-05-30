@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import styled, { css } from "styled-components";
 
 export const Wrapper = styled.div`
-  background-color: #5937ff;
-  /* background-color: white; */
+  background-color: ${({ theme }) => theme.colors.blue};
   width: 100vw;
   min-height: 100vh;
   display: grid;
@@ -38,7 +37,7 @@ export const Buttons = styled.div`
 
 export const Button = styled(Link)`
   border: none;
-  background-color: #9dff68;
+  background-color: ${({ theme }) => theme.colors.lightGreen};
   padding: 5px 10px;
   border-radius: 6px;
   font-weight: 500;
@@ -48,7 +47,7 @@ export const Button = styled(Link)`
   ${({ color2 }) =>
     color2 &&
     css`
-      background-color: #ff4837;
+      background-color: ${({ theme }) => theme.colors.lightRed};
     `}
 `;
 
