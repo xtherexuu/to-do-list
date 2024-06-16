@@ -9,5 +9,7 @@ export const GlobalStyles = createGlobalStyle`
     html, *::after, *::before {
         box-sizing: inherit;
     }
-
+    body {
+      color: ${({ theme }) => theme.colors.white};
+    }
 `;
