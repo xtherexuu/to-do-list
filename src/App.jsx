@@ -11,6 +11,7 @@ import SignupPage from "./Pages/Signup";
 import TasksLayout, {
   loader as tasksLayoutLoader,
 } from "./Layouts/TasksLayout";
+import TasksHome from "./Pages/TasksHome";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -19,11 +20,9 @@ const router = createBrowserRouter(
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
       </Route>
-      <Route
-        path="tasks"
-        element={<TasksLayout />}
-        loader={tasksLayoutLoader}
-      />
+      <Route path="tasks" element={<TasksLayout />} loader={tasksLayoutLoader}>
+        <Route index element={<TasksHome />} />
+      </Route>
     </>
   )
 );
