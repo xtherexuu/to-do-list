@@ -12,6 +12,7 @@ import TasksLayout, {
   loader as tasksLayoutLoader,
 } from "./Layouts/TasksLayout";
 import TasksHome from "./Pages/TasksHome";
+import Tasks from "./Pages/Tasks";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -22,6 +23,7 @@ const router = createBrowserRouter(
       </Route>
       <Route path="tasks" element={<TasksLayout />} loader={tasksLayoutLoader}>
         <Route index element={<TasksHome />} />
+        <Route path="all" element={<Tasks />} />
       </Route>
     </>
   )
