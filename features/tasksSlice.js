@@ -7,7 +7,7 @@ const initialState = {
       createDate: new Date(2024, 3, 12, 12, 30, 30, 320).getTime(),
       content: "Zrobić pyszny obiad!",
       done: false,
-      date: new Date(2024, 10, 2).getTime(),
+      date: new Date(2024, 10, 2, 0, 0, 0, 0).getTime(),
       priority: null,
       subtasks: [
         {
@@ -32,7 +32,7 @@ const initialState = {
       createDate: new Date(2024, 5, 13, 13, 30, 30, 320).getTime(),
       content: "Wyprowadzić psa na najpiękniejszy spacer marzeń tak właśnie!",
       done: false,
-      date: new Date(2024, 6, 3).getTime(),
+      date: new Date(2024, 6, 15, 0, 0, 0, 0).getTime(),
       priority: "Medium",
       subtasks: [
         {
@@ -67,7 +67,7 @@ const initialState = {
       createDate: new Date(2024, 3, 14, 14, 30, 30, 320).getTime(),
       content: "Napisać super program!",
       done: false,
-      date: new Date(2024, 2, 3).getTime(),
+      date: new Date(2024, 6, 14, 0, 0, 0, 0).getTime(),
       priority: null,
       subtasks: [],
     },
@@ -76,7 +76,7 @@ const initialState = {
       createDate: new Date(2024, 2, 12, 12, 30, 30, 320).getTime(),
       content: "Napisać książkę",
       done: false,
-      date: new Date(2024, 6, 4).getTime(),
+      date: new Date(2024, 6, 12, 0, 0, 0, 0).getTime(),
       priority: "Low",
       subtasks: [
         {
@@ -111,7 +111,7 @@ const initialState = {
       createDate: new Date(2024, 1, 13, 13, 30, 30, 320).getTime(),
       content: "Przeczytać książkę",
       done: false,
-      date: null,
+      date: new Date(2024, 5, 15, 0, 0, 0, 0).getTime(),
       priority: "Medium",
       subtasks: [
         {
@@ -136,7 +136,7 @@ const initialState = {
       createDate: new Date(2023, 4, 12, 14, 30, 30, 320).getTime(),
       content: "Zakupić garnitur",
       done: false,
-      date: null,
+      date: new Date(2024, 5, 15, 0, 0, 0, 0).getTime(),
       priority: null,
       subtasks: [],
     },
@@ -145,7 +145,7 @@ const initialState = {
       createDate: new Date(2024, 5, 24, 12, 30, 30, 320).getTime(),
       content: "Napisać do kolegi",
       done: false,
-      date: new Date(2024, 10, 2).getTime(),
+      date: new Date(2024, 6, 11, 0, 0, 0, 0).getTime(),
       priority: null,
       subtasks: [
         {
@@ -239,8 +239,8 @@ const initialState = {
       createDate: new Date(2024, 4, 1, 13, 30, 30, 320).getTime(),
       content: "Odrobić lekcje",
       done: false,
-      date: new Date().getTime(),
-      priority: "Medium",
+      date: new Date(2024, 6, 11, 0, 0, 0, 0).getTime(),
+      priority: "High",
       subtasks: [
         {
           id: 1,

@@ -27,32 +27,249 @@ import {
   HiOutlineSortAscending,
   HiOutlineSortDescending,
 } from "react-icons/hi";
+import { useSearchParams } from "react-router-dom";
 
 export default function Tasks() {
   const tasks = useSelector(selectTasks);
-  const [filtersState, setFiltersState] = useState({
-    isOpened: false,
-    todoDate: {
-      today: false,
-      thisweek: false,
-      pastDue: false,
-    },
-    priority: {
-      high: false,
-      medium: false,
-      low: false,
-    },
-    state: {
-      showDone: true,
-      showPastDue: true,
-    },
-  });
-  const [sortState, setSortState] = useState({
-    isOpened: false,
-    sortingMethod: null,
+  const [shownTasks, setShownTasks] = useState(tasks);
+  const [filtersAndSortState, setFiltersAndSortState] = useState({
+    isFiltersMenuOpened: false,
+    isSortMentuOpened: false,
   });
 
-  useEffect(() => {}, [filtersState]);
+  const [params, setParams] = useSearchParams();
+  const filters = params.getAll("filter");
+  const sort = params.get("sort");
+
+  function toggleFilter(filter) {
+    const URLParams = new URLSearchParams(params);
+    switch (filter) {
+      case "tododate/today":
+        URLParams.delete("filter", "tododate/thisweek");
+        if (URLParams.has("filter", filter)) {
+          URLParams.delete("filter", filter);
+        } else {
+          URLParams.append("filter", filter);
+        }
+        setParams(URLParams);
+        return;
+      case "tododate/thisweek":
+        URLParams.delete("filter", "tododate/today");
+        if (URLParams.has("filter", filter)) {
+          URLParams.delete("filter", filter);
+        } else {
+          URLParams.append("filter", filter);
+        }
+        setParams(URLParams);
+        return;
+      case "tododate/pastdue":
+        URLParams.delete("filter", "showpastdue/off");
+        if (URLParams.has("filter", filter)) {
+          URLParams.delete("filter", filter);
+        } else {
+          URLParams.append("filter", filter);
+        }
+        setParams(URLParams);
+        return;
+      case "showpastdue/off":
+        URLParams.delete("filter", "tododate/pastdue");
+        if (URLParams.has("filter", filter)) {
+          URLParams.delete("filter", filter);
+        } else {
+          URLParams.append("filter", filter);
+        }
+        setParams(URLParams);
+        return;
+      default:
+        if (URLParams.has("filter", filter)) {
+          URLParams.delete("filter", filter);
+        } else {
+          URLParams.append("filter", filter);
+        }
+        setParams(URLParams);
+        return;
+    }
+  }
+
+  function setSort(sort) {
+    const URLParams = new URLSearchParams(params);
+    if (params.has("sort", sort)) {
+      URLParams.delete("sort", sort);
+    } else {
+      URLParams.set("sort", sort);
+    }
+    setParams(URLParams);
+  }
+
+  function filterTasksByToDoDate(filters, tasks) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    if (filters.includes("tododate/today")) {
+      if (filters.includes("tododate/pastdue")) {
+        return tasks.filter((t) => t.date && t.date <= date.getTime());
+      } else {
+        return tasks.filter((t) => t.date && t.date == date.getTime());
+      }
+    } else if (filters.includes("tododate/thisweek")) {
+      const dayOfWeek = date.getDay();
+      const daysUntilSunday = 7 - dayOfWeek;
+      const endOfWeek = new Date(date);
+      endOfWeek.setHours(0, 0, 0, 0);
+      endOfWeek.setDate(date.getDate() + daysUntilSunday);
+      if (filters.includes("tododate/pastdue")) {
+        return tasks.filter((t) => t.date && t.date <= endOfWeek.getTime());
+      } else {
+        return tasks.filter(
+          (t) =>
+            t.date && t.date <= endOfWeek.getTime() && t.date >= date.getTime()
+        );
+      }
+    } else if (filters.includes("tododate/pastdue")) {
+      return tasks.filter((t) => t.date && t.date < date.getTime());
+    } else {
+      return tasks;
+    }
+  }
+
+  function filterTasksByPriority(filters, tasks) {
+    const reducedPriority = filters.reduce((acc, filter) => {
+      const [category, value] = filter.split("/");
+      if (category === "priority") {
+        acc.push(value);
+      }
+      return acc;
+    }, []);
+    if (reducedPriority.length) {
+      return tasks.filter(
+        ({ priority }) =>
+          priority && reducedPriority.includes(priority.toLowerCase())
+      );
+    } else {
+      return tasks;
+    }
+  }
+
+  function sortTasksByToDoDate(tasks) {
+    return tasks.sort((a, b) => a.date - b.date);
+  }
+
+  function sortTasksByCreationDate(tasks) {
+    return tasks.sort((a, b) => a.createDate - b.createDate);
+  }
+
+  function sortTasksByPriority(tasks) {
+    return tasks.sort((a, b) => {
+      switch (a.priority) {
+        case "High":
+          if (b.priority) {
+            if (b.priority === "High") {
+              return 0;
+            } else {
+              return -1;
+            }
+          } else {
+            return -1;
+          }
+        case "Medium":
+          if (b.priority) {
+            if (b.priority === "Medium") {
+              return 0;
+            } else if (b.priority === "Low") {
+              return -1;
+            } else {
+              return 1;
+            }
+          } else {
+            return -1;
+          }
+        case "Low":
+          if (b.priority) {
+            if (b.priority === "Low") {
+              return 0;
+            } else {
+              return 1;
+            }
+          } else {
+            return -1;
+          }
+        default:
+          return 1;
+      }
+    });
+  }
+
+  // filter names
+  // ToDoDate: today - tododate/today || thisWeek - tododate/thisweek || past due - tododate/pastdue
+  // Priority: high - priority/high || medium - priority/medium || low - priority/low
+  // State: show Done off - showdonetasks/off || show past due tasks - showpastdue/off
+
+  useEffect(() => {
+    if (
+      filters.includes("tododate/today") &&
+      filters.includes("tododate/thisweek")
+    ) {
+      const URLParams = new URLSearchParams(params);
+      URLParams.delete("filter", "tododate/thisweek");
+      setParams(URLParams);
+    }
+    if (
+      filters.includes("tododate/pastdue") &&
+      filters.includes("showpastdue/off")
+    ) {
+      const URLParams = new URLSearchParams(params);
+      URLParams.delete("filter", "showpastdue/off");
+      setParams(URLParams);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    let filteredTasks = [...tasks];
+    filteredTasks = [...filterTasksByToDoDate(filters, filteredTasks)];
+    filteredTasks = [...filterTasksByPriority(filters, filteredTasks)];
+    if (filters.includes("showdonetasks/off")) {
+      filteredTasks = [...filteredTasks.filter((t) => !t.done)];
+    }
+    if (filters.includes("showpastdue/off")) {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      filteredTasks = [
+        ...filteredTasks.filter((t) => t.date && t.date >= date.getTime()),
+      ];
+    }
+    // filteredTasks = [...sortTasksByPriority(filteredTasks)];
+    // filteredTasks = [...sortTasksByToDoDate(filteredTasks)];
+    switch (sort) {
+      case "tododate/ascending":
+        filteredTasks = [
+          ...sortTasksByToDoDate(filteredTasks).sort((a, b) =>
+            !a.date ? 1 : !b.date ? -1 : 0
+          ),
+        ];
+
+      case "tododate/descending":
+        filteredTasks = [...sortTasksByToDoDate(filteredTasks).reverse()];
+
+      case "creationdate/ascending":
+        filteredTasks = [...sortTasksByCreationDate(filteredTasks)];
+
+      case "creationdate/descending":
+        filteredTasks = [...sortTasksByCreationDate(filteredTasks).reverse()];
+
+      case "priority/descending":
+        filteredTasks = [...sortTasksByPriority(filteredTasks)];
+
+      case "priority/ascending":
+        filteredTasks = [
+          ...sortTasksByPriority(filteredTasks)
+            .reverse()
+            .sort((a, b) => (!a.priority ? 1 : !b.priority ? -1 : 0)),
+        ];
+
+      case null:
+        filteredTasks = [...sortTasksByCreationDate(filteredTasks)];
+    }
+    setShownTasks(filteredTasks);
+  }, [params, tasks]);
 
   return (
     <Wrapper>
@@ -61,11 +278,11 @@ export default function Tasks() {
           <ButtonContainer>
             <ButtonDescription>Filter</ButtonDescription>
             <FilterButton
-              isOpened={filtersState.isOpened}
+              isOpened={filtersAndSortState.isFiltersMenuOpened}
               onClick={() => {
-                setFiltersState({
-                  ...filtersState,
-                  isOpened: !filtersState.isOpened,
+                setFiltersAndSortState({
+                  isSortMentuOpened: false,
+                  isFiltersMenuOpened: !filtersAndSortState.isFiltersMenuOpened,
                 });
               }}
             >
@@ -76,16 +293,19 @@ export default function Tasks() {
             <ButtonDescription> Sort</ButtonDescription>
             <FilterButton
               sortButton
-              isOpened={sortState.isOpened}
+              isOpened={filtersAndSortState.isSortMentuOpened}
               onClick={() => {
-                setSortState({ ...sortState, isOpened: !sortState.isOpened });
+                setFiltersAndSortState({
+                  isFiltersMenuOpened: false,
+                  isSortMentuOpened: !filtersAndSortState.isSortMentuOpened,
+                });
               }}
             >
               <MdSort />
             </FilterButton>
           </ButtonContainer>
         </FiltersSection>
-        {filtersState.isOpened ? (
+        {filtersAndSortState.isFiltersMenuOpened ? (
           <FiltersWindow>
             {/* <FilterCategory>
             <FilterCategoryHeading>Your categories</FilterCategoryHeading>
@@ -107,19 +327,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.todoDate.today}
+                    isChecked={filters.includes("tododate/today")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            todoDate: {
-                              ...filters.todoDate,
-                              today: !filters.todoDate.today,
-                              thisweek: false,
-                            },
-                          })
-                      );
+                      toggleFilter("tododate/today");
                     }}
                   >
                     <MdDone />
@@ -129,19 +339,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.todoDate.thisweek}
+                    isChecked={filters.includes("tododate/thisweek")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            todoDate: {
-                              ...filters.todoDate,
-                              thisweek: !filters.todoDate.thisweek,
-                              today: false,
-                            },
-                          })
-                      );
+                      toggleFilter("tododate/thisweek");
                     }}
                   >
                     <MdDone />
@@ -151,22 +351,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.todoDate.pastDue}
+                    isChecked={filters.includes("tododate/pastdue")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            todoDate: {
-                              ...filters.todoDate,
-                              pastDue: !filters.todoDate.pastDue,
-                            },
-                            state: {
-                              ...filters.state,
-                              showPastDue: true,
-                            },
-                          })
-                      );
+                      toggleFilter("tododate/pastdue");
                     }}
                   >
                     <MdDone />
@@ -181,18 +368,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.priority.high}
+                    isChecked={filters.includes("priority/high")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            priority: {
-                              ...filters.priority,
-                              high: !filters.priority.high,
-                            },
-                          })
-                      );
+                      toggleFilter("priority/high");
                     }}
                   >
                     <MdDone />
@@ -202,18 +380,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.priority.medium}
+                    isChecked={filters.includes("priority/medium")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            priority: {
-                              ...filters.priority,
-                              medium: !filters.priority.medium,
-                            },
-                          })
-                      );
+                      toggleFilter("priority/medium");
                     }}
                   >
                     <MdDone />
@@ -223,18 +392,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.priority.low}
+                    isChecked={filters.includes("priority/low")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            priority: {
-                              ...filters.priority,
-                              low: !filters.priority.low,
-                            },
-                          })
-                      );
+                      toggleFilter("priority/low");
                     }}
                   >
                     <MdDone />
@@ -249,18 +409,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.state.showDone}
+                    isChecked={!filters.includes("showdonetasks/off")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            state: {
-                              ...filters.state,
-                              showDone: !filters.state.showDone,
-                            },
-                          })
-                      );
+                      toggleFilter("showdonetasks/off");
                     }}
                   >
                     <MdDone />
@@ -270,22 +421,9 @@ export default function Tasks() {
                 <FilterLabel>
                   <FilterInput
                     type="checkbox"
-                    isChecked={filtersState.state.showPastDue}
+                    isChecked={!filters.includes("showpastdue/off")}
                     onClick={() => {
-                      setFiltersState(
-                        (filters) =>
-                          (filters = {
-                            ...filters,
-                            todoDate: {
-                              ...filters.todoDate,
-                              pastDue: false,
-                            },
-                            state: {
-                              ...filters.state,
-                              showPastDue: !filters.state.showPastDue,
-                            },
-                          })
-                      );
+                      toggleFilter("showpastdue/off");
                     }}
                   >
                     <MdDone />
@@ -296,33 +434,23 @@ export default function Tasks() {
             </FilterCategory>
           </FiltersWindow>
         ) : null}
-        {sortState.isOpened ? (
+        {filtersAndSortState.isSortMentuOpened ? (
           <SortWindow>
             <SortCategory>
               <SortCategoryHeading>By todo date</SortCategoryHeading>
               <SortOptions>
                 <SortButton
-                  isChecked={sortState.sortingMethod === "todoDate/ascending"}
+                  isChecked={sort === "tododate/ascending"}
                   onClick={() => {
-                    const value = "todoDate/ascending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("tododate/ascending");
                   }}
                 >
                   <HiOutlineSortAscending /> Form oldest to newest
                 </SortButton>
                 <SortButton
-                  isChecked={sortState.sortingMethod === "todoDate/descending"}
+                  isChecked={sort === "tododate/descending"}
                   onClick={() => {
-                    const value = "todoDate/descending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("tododate/descending");
                   }}
                 >
                   <HiOutlineSortDescending /> Form newest to oldest
@@ -333,31 +461,19 @@ export default function Tasks() {
               <SortCategoryHeading>By creation date</SortCategoryHeading>
               <SortOptions>
                 <SortButton
-                  isChecked={
-                    sortState.sortingMethod === "creationDate/ascending"
-                  }
+                  isChecked={sort === "creationdate/ascending"}
                   onClick={() => {
-                    const value = "creationDate/ascending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("creationdate/ascending");
                   }}
                 >
                   <HiOutlineSortAscending /> Form oldest to newest
                 </SortButton>
                 <SortButton
                   isChecked={
-                    sortState.sortingMethod === "creationDate/descending"
+                    sort === "creationdate/descending" || sort === null
                   }
                   onClick={() => {
-                    const value = "creationDate/descending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("creationdate/descending");
                   }}
                 >
                   <HiOutlineSortDescending /> Form newest to oldest
@@ -368,27 +484,17 @@ export default function Tasks() {
               <SortCategoryHeading>By priority</SortCategoryHeading>
               <SortOptions>
                 <SortButton
-                  isChecked={sortState.sortingMethod === "priority/descending"}
+                  isChecked={sort === "priority/descending"}
                   onClick={() => {
-                    const value = "priority/descending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("priority/descending");
                   }}
                 >
                   <HiOutlineSortDescending /> From high to low
                 </SortButton>
                 <SortButton
-                  isChecked={sortState.sortingMethod === "priority/ascending"}
+                  isChecked={sort === "priority/ascending"}
                   onClick={() => {
-                    const value = "priority/ascending";
-                    setSortState({
-                      ...sortState,
-                      sortingMethod:
-                        sortState.sortingMethod === value ? null : value,
-                    });
+                    setSort("priority/ascending");
                   }}
                 >
                   <HiOutlineSortAscending /> From low to high
@@ -398,7 +504,7 @@ export default function Tasks() {
           </SortWindow>
         ) : null}
         <TasksContainer>
-          {tasks.map((task) => (
+          {shownTasks.map((task) => (
             <Task key={task.id} task={task} />
           ))}
         </TasksContainer>
